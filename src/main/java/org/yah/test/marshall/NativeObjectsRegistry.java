@@ -84,8 +84,10 @@ public class NativeObjectsRegistry {
         int typeId;
         if (typeIdSupplier == null)
             typeId = nativeObjects.size();
-        else
+        else {
             typeId = Objects.requireNonNull(typeIdSupplier.apply(type), "no type id for type : " + type.getTypeName());
+            if (typeId < 0) throw new IllegalStateException("typeIdSupplier returned a negative type id " + typeId +" , typeId can not be negative");
+        }
 
         if (type.isEnum()) {
             NativeObject nativeEnum = new NativeObject(type, typeId, Integer.BYTES, Integer.BYTES);

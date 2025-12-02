@@ -5,8 +5,7 @@ import org.yah.test.marshall.NativeInstancesLayout.LayoutEntry;
 
 import javax.annotation.Nullable;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.yah.test.marshall.NativeInstancesLayout.align;
 import static org.yah.test.marshall.TestObjects.*;
 
@@ -45,11 +44,11 @@ class NativeLayoutFactoryTest {
         assertEntry(layout, to0.objectWithArrays.aBooleanArray, 5);
         assertEntry(layout, to0.objectWithArrays.aReferenceArray, 3 * Long.BYTES);
 
-        assertSame(to1, layout.get(to0.aTestObject).instance());
-        assertSame(to1.objectWithArrays, layout.get(to1.objectWithArrays).instance());
+        assertSame(to1, assertContains(layout, to0.aTestObject).instance());
+        assertSame(to1.objectWithArrays, assertContains(layout, to1.objectWithArrays).instance());
 
         assertEntry(layout, to2.objectWithArrays.aReferenceArray, 2 * Long.BYTES);
-        assertSame(to4, layout.get(to3.aTestObject).instance());
+        assertSame(to4, assertContains(layout, to3.aTestObject).instance());
 
         assertEntry(layout, to0.objectWithArrays.aByteArray, 5);
 
@@ -61,7 +60,8 @@ class NativeLayoutFactoryTest {
         }
         assertEquals(expectedOffset, layout.size());
 
-        layout = layoutFactory.createLayout(to0, 1);
+        layoutFactory = new NativeLayoutFactory(objectsRegistry, 1);
+        layout = layoutFactory.createLayout(to0, null);
         expectedOffset = 0;
         for (LayoutEntry entry : layout) {
             assertEquals(expectedOffset, entry.offset());
@@ -71,8 +71,15 @@ class NativeLayoutFactoryTest {
 
     }
 
+    private static LayoutEntry assertContains(NativeInstancesLayout layout, Object instance) {
+        LayoutEntry entry = layout.get(instance);
+        assertNotNull(entry);
+        return entry;
+    }
+
     private void assertEntry(NativeInstancesLayout layout, Object instance, int expectedSize) {
         LayoutEntry entry = layout.get(instance);
+        assertNotNull(entry);
         assertSame(entry.instance(), instance);
         assertEquals(expectedSize, entry.size());
     }

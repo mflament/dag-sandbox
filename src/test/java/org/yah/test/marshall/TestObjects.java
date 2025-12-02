@@ -3,6 +3,7 @@ package org.yah.test.marshall;
 import com.sun.jna.Structure;
 import org.yah.test.marshall.annotations.NativeOrder;
 
+import java.util.Arrays;
 import java.util.List;
 
 // @formatter:off
@@ -26,6 +27,22 @@ public class TestObjects {
         @NativeOrder(10) public TestStruct aStruct = new TestStruct();      // offset 48    size: 16
         @NativeOrder(11) public TestObjectWithArrays objectWithArrays;      // offset 64    size 8
         @NativeOrder(12) public TestObject aTestObject;                     // offset 72    size 8
+
+        @Override public String toString() {
+            return "TestObject{" +
+                    "aByte=" + aByte +
+                    ", aShort=" + aShort +
+                    ", anInt=" + anInt +
+                    ", aLong=" + aLong +
+                    ", aFloat=" + aFloat +
+                    ", aDouble=" + aDouble +
+                    ", aBoolean=" + aBoolean +
+                    ", anEnum=" + anEnum +
+                    ", aFloatArray=" + Arrays.toString(aFloatArray) +
+                    ", aStruct=" + aStruct +
+                    ", objectWithArrays=" + objectWithArrays +
+                    '}';
+        }
     }
 
     // alignment 4 size 12

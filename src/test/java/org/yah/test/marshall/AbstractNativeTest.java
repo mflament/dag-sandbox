@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.yah.test.marshall.TestObjects.*;
 
-public abstract class AbstractMarshallerTest {
+public abstract class AbstractNativeTest {
 
     protected TestObject createTestObject(Random random) {
         TestObject obj = new TestObject();

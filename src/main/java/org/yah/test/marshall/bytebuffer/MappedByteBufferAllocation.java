@@ -7,12 +7,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.EnumSet;
-import java.util.Set;
-import java.util.function.LongFunction;
-import java.util.function.Supplier;
 
 public class MappedByteBufferAllocation implements MemoryAllocation {
 
@@ -34,8 +28,7 @@ public class MappedByteBufferAllocation implements MemoryAllocation {
     @Override
     public MemorySlice slice(long offset, int size) {
         try {
-            MappedByteBuffer buffer = fileChannel.map(mapMode, address + offset, size);
-            return new ByteBufferSlice(buffer);
+            return new ByteBufferSlice(fileChannel.map(mapMode, address + offset, size));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

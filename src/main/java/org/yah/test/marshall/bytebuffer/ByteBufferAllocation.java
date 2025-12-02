@@ -6,7 +6,6 @@ import org.yah.test.marshall.MemorySlice;
 import javax.annotation.Nullable;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -73,7 +72,7 @@ public class ByteBufferAllocation implements MemoryAllocation {
 
     @Override
     public MemorySlice slice(long offset, int size) {
-        return new ByteBufferSlice(buffer.slice(Math.toIntExact(offset), size));
+        return new ByteBufferSlice(buffer.slice(Math.toIntExact(offset), size).order(buffer.order()));
     }
 
     @Override

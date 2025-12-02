@@ -4,7 +4,6 @@ import org.yah.test.marshall.NativeInstancesLayout.LayoutEntry;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
-import java.util.Map;
 import java.util.Objects;
 
 import static org.yah.test.marshall.NativeObject.NativeField;
@@ -14,48 +13,40 @@ public final class NativeObjectMarshaller {
 
     static final boolean DEBUG = true;
 
-    public record NativeInstances<A extends MemoryAllocation>(NativeInstancesLayout layout, A allocation) implements AutoCloseable {
-        public MemorySlice slice(Object instance) {
-            LayoutEntry entry = layout.get(instance);
-            return allocation.slice(entry.offset(), entry.size());
-        }
-
-        @Override
-        public void close() {
-            allocation.close();
-        }
-    }
-
     private final NativeObjectsRegistry objectsRegistry;
     private final NativeLayoutFactory layoutFactory;
 
     public NativeObjectMarshaller(NativeObjectsRegistry objectsRegistry) {
+        this(objectsRegistry, Long.BYTES);
+    }
+
+    public NativeObjectMarshaller(NativeObjectsRegistry objectsRegistry, int layoutAlignment) {
         this.objectsRegistry = Objects.requireNonNull(objectsRegistry, "objectsRegistry is null");
-        this.layoutFactory = new NativeLayoutFactory(objectsRegistry);
+        this.layoutFactory = new NativeLayoutFactory(objectsRegistry, layoutAlignment);
     }
 
-    public <A extends MemoryAllocation> NativeInstances<A> marshall(Object instance, MemoryAllocator<A> allocator) {
-        NativeInstancesLayout layout = layoutFactory.createLayout(instance);
-        return marshall(layout, allocator.allocate(layout.size()));
+    public <A extends MemoryAllocation> NativeInstances<A> marshall(Object instance, MemoryAllocator<A> allocator,
+                                                                    @Nullable NativeInstances<?> parent) {
+        NativeInstancesLayout layout = layoutFactory.createLayout(instance, parent);
+        return marshall(layout, allocator.allocate(layout.size()), parent);
     }
 
-    public <A extends MemoryAllocation> NativeInstances<A> marshall(NativeInstancesLayout layout, A allocation) {
+    <A extends MemoryAllocation> NativeInstances<A> marshall(NativeInstancesLayout layout, A allocation, NativeInstances<?> parent) {
+        NativeInstances<A> nativeInstances = parent != null
+                ? parent.createChild(layout, allocation)
+                : new NativeInstances<>(layout, allocation);
         for (LayoutEntry layoutEntry : layout) {
             MemorySlice slice = allocation.slice(layoutEntry.offset(), layoutEntry.size());
-            MarshallingContext ctx = new MarshallingContext(layout, allocation.address(), slice, DEBUG ? new ReflectionPath() : null);
+            MarshallingContext ctx = new MarshallingContext(nativeInstances, slice, DEBUG ? new ReflectionPath() : null);
             marshall(layoutEntry, ctx);
         }
-        return new NativeInstances<>(layout, allocation);
+        return nativeInstances;
     }
 
-    private record MarshallingContext(NativeInstancesLayout layout, long baseAddress, MemorySlice slice,
+    private record MarshallingContext(NativeInstances<?> nativeInstances, MemorySlice slice,
                                       @Nullable ReflectionPath reflectionPath) {
-
         public long addressOf(Object instance) {
-            if (instance == null)
-                return 0L;
-            LayoutEntry layoutEntry = layout.get(instance);
-            return Math.max(1, baseAddress) + layoutEntry.offset();
+            return nativeInstances.addressOf(instance);
         }
 
         public void push(Object instance) {
@@ -195,7 +186,6 @@ public final class NativeObjectMarshaller {
     }
 
     static String formatFieldName(Object instance, NativeField field, @Nullable ReflectionPath reflectionPath) {
-        String fieldName;
         if (reflectionPath != null)
             return reflectionPath.toString();
         return instance.getClass().getTypeName() + "#" + field.name();

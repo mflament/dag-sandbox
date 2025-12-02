@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.yah.test.marshall.TestObjects.TestObject;
 
-class NativeObjectFileUnMarshallerTest extends AbstractMarshallerTest {
+class NativeObjectFileUnMarshallerTest extends AbstractNativeTest {
     @Test
     void testMarshalToFile() throws IOException {
         Random random = new Random(12345);

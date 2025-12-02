@@ -2,13 +2,13 @@ package org.yah.test.marshall;
 
 import org.yah.test.marshall.NativeInstancesLayout.LayoutEntry;
 import org.yah.test.marshall.NativeObject.NativeField;
-import org.yah.test.marshall.NativeObjectMarshaller.NativeInstances;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
@@ -178,8 +178,8 @@ public final class NativeObjectUnmarshaller {
         throw new IllegalArgumentException("Invalid primitive type " + type.getTypeName());
     }
 
-    private record UnmarshallingContext<A extends MemoryAllocation>(NativeInstances<A> instances, LayoutEntry entry,
-                                                                    MemorySlice slice,
+    private record UnmarshallingContext<A extends MemoryAllocation>(NativeInstances<A> instances,
+                                                                    LayoutEntry entry, MemorySlice slice,
                                                                     Set<LayoutEntry> unmarshalled,
                                                                     LinkedList<UnmarshallingContext<A>> queue,
                                                                     @Nullable ReflectionPath reflectionPath) {
@@ -200,10 +200,11 @@ public final class NativeObjectUnmarshaller {
             if (address == 0)
                 return null;
 
-            long offset = address - Math.max(1, instances.allocation().address());
-            LayoutEntry entry = instances.layout().getEntryAtOffset(offset);
+            LayoutEntry entry = instances.entryAtAddress(address);
+            if (entry == null)
+                throw new NoSuchElementException("No instance found at address " + address);
             queue.add(createNextContext(entry));
-            return entry.instance();
+            return instances.instanceAtAddress(address);
         }
 
         public void push(Object instance) {

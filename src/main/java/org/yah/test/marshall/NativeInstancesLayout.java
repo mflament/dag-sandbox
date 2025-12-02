@@ -1,6 +1,7 @@
 package org.yah.test.marshall;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 import java.util.*;
 
@@ -54,23 +55,19 @@ public final class NativeInstancesLayout implements Iterable<NativeInstancesLayo
         return instanceEntries.containsKey(instance);
     }
 
+    @Nullable
     public LayoutEntry get(Object instance) {
         if (instanceEntries == null)
             instanceEntries = createInstanceEntries();
-        LayoutEntry entry = instanceEntries.get(instance);
-        if (entry != null)
-            return entry;
-        throw new NoSuchElementException("No layout entry of instance " + instance.getClass());
+        return instanceEntries.get(instance);
     }
 
+    @Nullable
     public LayoutEntry getEntryAtOffset(long offset) {
         if (offsetEntries == null) {
             offsetEntries = createOffsetEntries();
         }
-        LayoutEntry entry = offsetEntries.get(offset);
-        if (entry == null)
-            throw new IllegalArgumentException("No entry at offset " + offset);
-        return entry;
+        return offsetEntries.get(offset);
     }
 
     public boolean add(Object instance) {
@@ -108,16 +105,6 @@ public final class NativeInstancesLayout implements Iterable<NativeInstancesLayo
         Map<Long, LayoutEntry> map = new HashMap<>(entries.size());
         for (LayoutEntry entry : entries) map.put(entry.offset, entry);
         return map;
-    }
-
-    private int getAlignment(Class<?> type) {
-        if (type.isArray())
-            return getAlignment(type.getComponentType());
-        if (NativeObject.isStruct(type)) {
-            NativeObject struct = objectsRegistry.get(type);
-            return struct.alignment();
-        }
-        return objectsRegistry.shallowSizeof(type);
     }
 
     private int sizeOfInstance(Object instance) {

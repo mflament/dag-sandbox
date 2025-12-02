@@ -43,27 +43,27 @@ public record ByteBufferSlice(ByteBuffer buffer) implements MemorySlice {
 
     @Override
     public void read(int offset, short[] array) {
-        buffer.slice(offset, array.length * Short.BYTES).asShortBuffer().get(array);
+        buffer.slice(offset, array.length * Short.BYTES).order(buffer.order()).asShortBuffer().get(array);
     }
 
     @Override
     public void read(int offset, int[] array) {
-        buffer.slice(offset, array.length * Integer.BYTES).asIntBuffer().get(array);
+        buffer.slice(offset, array.length * Integer.BYTES).order(buffer.order()).asIntBuffer().get(array);
     }
 
     @Override
     public void read(int offset, long[] array) {
-        buffer.slice(offset, array.length * Long.BYTES).asLongBuffer().get(array);
+        buffer.slice(offset, array.length * Long.BYTES).order(buffer.order()).asLongBuffer().get(array);
     }
 
     @Override
     public void read(int offset, float[] array) {
-        buffer.slice(offset, array.length * Float.BYTES).asFloatBuffer().get(array);
+        buffer.slice(offset, array.length * Float.BYTES).order(buffer.order()).asFloatBuffer().get(array);
     }
 
     @Override
     public void read(int offset, double[] array) {
-        buffer.slice(offset, array.length * Double.BYTES).asDoubleBuffer().get(array);
+        buffer.slice(offset, array.length * Double.BYTES).order(buffer.order()).asDoubleBuffer().get(array);
     }
 
     @Override
@@ -103,26 +103,26 @@ public record ByteBufferSlice(ByteBuffer buffer) implements MemorySlice {
 
     @Override
     public void write(int offset, short[] array) {
-        buffer.slice(offset, array.length * Short.BYTES).asShortBuffer().put(array);
+        buffer.slice(offset, array.length * Short.BYTES).order(buffer.order()).asShortBuffer().put(array);
     }
 
     @Override
     public void write(int offset, int[] array) {
-        buffer.slice(offset, array.length * Integer.BYTES).asIntBuffer().put(array);
+        buffer.slice(offset, array.length * Integer.BYTES).order(buffer.order()).asIntBuffer().put(array);
     }
 
     @Override
     public void write(int offset, long[] array) {
-        buffer.slice(offset, array.length * Long.BYTES).asLongBuffer().put(array);
+        buffer.slice(offset, array.length * Long.BYTES).order(buffer.order()).asLongBuffer().put(array);
     }
 
     @Override
     public void write(int offset, float[] array) {
-        buffer.slice(offset, array.length * Float.BYTES).asFloatBuffer().put(array);
+        buffer.slice(offset, array.length * Float.BYTES).order(buffer.order()).asFloatBuffer().put(array);
     }
 
     @Override
     public void write(int offset, double[] array) {
-        buffer.slice(offset, array.length * Double.BYTES).asDoubleBuffer().put(array);
+        buffer.slice(offset, array.length * Double.BYTES).order(buffer.order()).asDoubleBuffer().put(array);
     }
 }

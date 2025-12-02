@@ -20,7 +20,7 @@ public final class NativeObjectFileMarshaller {
 
     static final byte[] HEADER = "NBIN".getBytes(StandardCharsets.US_ASCII);
 
-    public static final int LAYOUT_ENTRY_SIZE = 2 * Long.BYTES + 2 * Integer.BYTES;
+    public static final int LAYOUT_ENTRY_SIZE = Long.BYTES + 3 * Integer.BYTES;
 
     private final NativeObjectsRegistry objectsRegistry;
     private final NativeLayoutFactory layoutFactory;
@@ -29,7 +29,7 @@ public final class NativeObjectFileMarshaller {
     public NativeObjectFileMarshaller(NativeObjectsRegistry objectsRegistry) {
         this.objectsRegistry = Objects.requireNonNull(objectsRegistry, "objectsRegistry is null");
         layoutFactory = new NativeLayoutFactory(objectsRegistry);
-        marshaller = new NativeObjectMarshaller(objectsRegistry);
+        marshaller = new NativeObjectMarshaller(objectsRegistry, 1);
     }
 
     public void marshall(Path file, Object instance) throws IOException {
@@ -72,9 +72,9 @@ public final class NativeObjectFileMarshaller {
      * <pre>
      * if object/struct
      *      for each field
-     *          string : field/constant name
+     *          string : field name
      *          int : dims (0 if not array, number of array dimensions otherwise)
-     *          long : typeId (> Integer.MAX_VALUE for primitive)
+     *          int : typeId (< 0 for primitive)
      * if enum
      *      for each enum constant
      *          string : constant name
@@ -102,7 +102,7 @@ public final class NativeObjectFileMarshaller {
             for (NativeObject.NativeField field : object.fields()) {
                 putString(field.name(), buffer);
                 buffer.putInt(getDims(field.type()));
-                buffer.putLong(getTypeId(field.type()));
+                buffer.putInt(getTypeId(field.type()));
             }
         }
         buffer.putInt(0, buffer.position() - Integer.BYTES);
@@ -111,7 +111,7 @@ public final class NativeObjectFileMarshaller {
     /**
      * int : layout entry count
      * for each entry :
-     * - long : typeId (component typeId for array (can be over Integer.MAX_VALUE for primitive types)
+     * - int : typeId (component typeId for array, < 0 for primitive)
      * - long : offset
      * - int : bytes size (< 0 if entry is an array, > 0 otherwise)
      * - int : length = 1 or array length
@@ -121,8 +121,8 @@ public final class NativeObjectFileMarshaller {
         writeFully(buffer.putInt(layout.entryCount()).flip(), fileChannel);
         buffer.clear();
         for (LayoutEntry entry : layout) {
-            long typeId = getTypeId(entry.instance().getClass());
-            buffer.putLong(typeId) // type id
+            int typeId = getTypeId(entry.instance().getClass());
+            buffer.putInt(typeId) // type id
                     .putLong(entry.offset()) // offset
                     .putInt(entry.isArray() ? -entry.size() : entry.size()) // size
                     .putInt(entry.isArray() ? Array.getLength(entry.instance()) : 1); // array lengh
@@ -134,9 +134,8 @@ public final class NativeObjectFileMarshaller {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN);
         // write total size
         writeFully(buffer.putLong(layout.size()).flip(), fileChannel);
-
         MappedByteBufferAllocation allocation = new MappedByteBufferAllocation(fileChannel, fileChannel.position(), FileChannel.MapMode.READ_WRITE);
-        marshaller.marshall(layout, allocation);
+        marshaller.marshall(layout, allocation, null);
     }
 
     private static int getDims(Class<?> type) {
@@ -183,23 +182,24 @@ public final class NativeObjectFileMarshaller {
         }
     }
 
-    private long getTypeId(Class<?> type) {
+    // < 0 if primitive
+    private int getTypeId(Class<?> type) {
         if (type.isArray())
             type = type.componentType();
         if (type.isPrimitive())
-            return (long) Integer.MAX_VALUE + getPrimitiveTypeId(type);
+            return getPrimitiveTypeId(type);
         NativeObject nativeObject = objectsRegistry.get(type);
         return nativeObject.typeId();
     }
 
     private static int getPrimitiveTypeId(Class<?> type) {
-        if (type == byte.class) return 1;
-        if (type == short.class) return 2;
-        if (type == int.class) return 3;
-        if (type == long.class) return 4;
-        if (type == float.class) return 5;
-        if (type == double.class) return 6;
-        if (type == boolean.class) return 7;
+        if (type == byte.class) return -1;
+        if (type == short.class) return -2;
+        if (type == int.class) return -3;
+        if (type == long.class) return -4;
+        if (type == float.class) return -5;
+        if (type == double.class) return -6;
+        if (type == boolean.class) return -7;
         throw new IllegalArgumentException("Unsupported primitive type " + type.getTypeName());
     }
 

@@ -1,5 +1,5 @@
 import './style.css'
-import {readBinFile} from "./bin-reader.ts";
+import {readBinFile} from "./bin-file-reader.ts";
 
 function queryElement<T extends HTMLElement>(selector: string): T {
     const e = document.querySelector<HTMLElement>(selector);
@@ -21,8 +21,9 @@ async function setup() {
         if (!item) return;
         e.preventDefault();
         const file = item.getAsFile();
-        if (file)
-            readBinFile(file);
+        if (file) {
+            readBinFile(file).then(bf => console.log(bf));
+        }
     }
 
     function dragover(e: DragEvent) {

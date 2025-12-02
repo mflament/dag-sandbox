@@ -2,7 +2,6 @@ package org.yah.test.marshall;
 
 import org.yah.test.marshall.NativeInstancesLayout.LayoutEntry;
 import org.yah.test.marshall.NativeObject.NativeField;
-import org.yah.test.marshall.NativeObjectMarshaller.NativeInstances;
 import org.yah.test.marshall.bytebuffer.MappedByteBufferAllocation;
 
 import javax.annotation.Nonnull;
@@ -119,7 +118,6 @@ public class NativeObjectFileUnmarshaller {
             classTypeIds.put(getClass(typeName), typeId);
             fileChannel.position(start + entrySize);
         }
-
         NativeObjectsRegistry registry = new NativeObjectsRegistry(typeIntrospector, classTypeIds::get);
         classTypeIds.keySet().forEach(registry::get);
         return registry;
@@ -140,7 +138,7 @@ public class NativeObjectFileUnmarshaller {
     }
 
     private LayoutEntry readLayoutEntry(ByteBuffer buffer, NativeObjectsRegistry objectsRegistry) {
-        long typeId = buffer.getLong();
+        int typeId = buffer.getInt();
         long offset = buffer.getLong();
         int size = buffer.getInt();
         int length = buffer.getInt();
@@ -159,29 +157,29 @@ public class NativeObjectFileUnmarshaller {
             }
             return new LayoutEntry(instance, offset, -size);
         } else {
-            if (typeId > Integer.MAX_VALUE)
+            if (typeId < 0)
                 throw new IllegalStateException("Invalid object layout entry typeId " + typeId);
-            NativeObject nativeObject = objectsRegistry.get((int) typeId);
+            NativeObject nativeObject = objectsRegistry.get(typeId);
             Object instance = createInstance(nativeObject.type(), objectsRegistry);
             return new LayoutEntry(instance, offset, size);
         }
     }
 
     private static Class<?> getArrayComponentType(long typeId, NativeObjectsRegistry objectsRegistry) {
-        if (typeId > Integer.MAX_VALUE)
-            return getPrimitiveType(typeId - Integer.MAX_VALUE);
+        if (typeId < 0)
+            return getPrimitiveType(typeId);
         NativeObject nativeObject = objectsRegistry.get((int) typeId);
         return nativeObject.type();
     }
 
     private static Class<?> getPrimitiveType(long id) {
-        if (id == 1) return byte.class;
-        if (id == 2) return short.class;
-        if (id == 3) return int.class;
-        if (id == 4) return long.class;
-        if (id == 5) return float.class;
-        if (id == 6) return double.class;
-        if (id == 7) return boolean.class;
+        if (id == -1) return byte.class;
+        if (id == -2) return short.class;
+        if (id == -3) return int.class;
+        if (id == -4) return long.class;
+        if (id == -5) return float.class;
+        if (id == -6) return double.class;
+        if (id == -7) return boolean.class;
         throw new IllegalArgumentException("Unresolved primitive type id " + id);
     }
 
